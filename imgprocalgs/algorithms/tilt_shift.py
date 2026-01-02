@@ -12,35 +12,38 @@ from .base import BaseImageAlgorithm
 
 class TiltShift(BaseImageAlgorithm):
     """ Tilt-shift technique """
-    def __init__(
-        self,
-        image_path: str,
-        destination_path: str,
-        min_blur: float,
-        max_blur: float,
-        sharpen_area_size: List = None
-    ):
-        super().__init__(image_path, destination_path)
+    def __init__(self,
+                 image_path: str,
+                 destination_path: str,
+                 min_blur: float,
+                 max_blur: float,
+                 sharpen_area_size: List=None):
 
+        super().__init__(image_path, destination_path)
+        self.image_path = image_path
+        self.destination_path = destination_path
         self.input_image = Image(self.image_path)
         self.pixels = self.input_image.pixels
 
         if not sharpen_area_size:
             sharpen_area_size = [0, 0]
 
-        self.sharpen_min_h, self.sharpen_max_h = sharpen_area_size
+        self.sharpen_min_h, self.sharpen_max_h = sharpen_area_size[0], sharpen_area_size[1]
         self.sharpen_size = self.sharpen_max_h - self.sharpen_min_h
         self.sharpen_center = self.sharpen_min_h + self.sharpen_size // 2
+
+        self.filter_elements = []
+
+        self.min_factor = 0.003
+        self.max_factor = 0.003
 
         self.min_blur = min_blur
         self.max_blur = max_blur
 
-        self.filter_elements = []
-        self.min_factor = 0.003
 
     def output_filename(self) -> str:
         return "output_tilt_shift.jpg"
-
+    
     @classmethod
     def _make_filter_factor(cls, blur: float, index: int):
         return (1 / (sqrt(2 * pi) * blur)) * exp(-pow(index, 2)/(2 * pow(blur, 2)))
