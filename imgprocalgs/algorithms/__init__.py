@@ -9,5 +9,9 @@ __ALGORITHMS__ = [
     'sepia',
 
     # other
-    'negative'
+    'negative',
+
+    # gen_ai
+    "genai_enhancement",
+    "genai_ghibli"
 ]

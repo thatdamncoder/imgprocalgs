@@ -4,11 +4,12 @@ import os
 
 from PIL import Image as PillowImage
 from imgprocalgs.algorithms.utilities import Image, get_greyscale
+from .base import BaseImageAlgorithm
 
 
-class FloydSteinberg:
+class FloydSteinberg(BaseImageAlgorithm):
     """
-    Floyd Stainberg algorithm using for reducng grayscale image to black and white.
+    Floyd Steinberg algorithm used for reducing grayscale image to black and white.
     Source: https://en.wikipedia.org/wiki/Floyd%E2%80%93Steinberg_dithering
     """
 
@@ -16,8 +17,10 @@ class FloydSteinberg:
     WHITE = "#FFFFFF"
 
     def __init__(self, image_path: str, destination_path: str, factor: int):
+        super().__init__(image_path, destination_path)
+
         self.min_factor = 0
-        self.max_factor = int(get_greyscale(255, 255, 255))  # max greyscale valaue for #FFFFFF
+        self.max_factor = int(get_greyscale(255, 255, 255))  # max greyscale value
 
         if not self.min_factor < factor < self.max_factor:
             raise ValueError(f"Factor value should be from 0 to {self.max_factor}")
@@ -25,17 +28,19 @@ class FloydSteinberg:
         self.image = Image(image_path)
         self.factor = factor
 
-        self.destination_path = destination_path
-
-        #  raw error table and output image
+        # raw error table and output image
         self.width, self.height = self.image.get_size()
         self.greyscale_image = self.image2greyscale()
+
         # error size + 1 than input image because of lack of if statements
         self.error_table = [[0 for _ in range(self.height + 2)] for __ in range(self.width + 2)]
 
         self.output_image = PillowImage.new("RGB", (self.width, self.height), self.WHITE)
         self.output_pixels = self.output_image.load()
         self.output_image_name = "output_floyd_steinberg.jpg"
+
+    def output_filename(self) -> str:
+        return self.output_image_name
 
     def image2greyscale(self):
         greyscale_image = PillowImage.new("RGB", (self.width, self.height), self.WHITE)
@@ -61,13 +66,12 @@ class FloydSteinberg:
                     self.output_pixels[x, y] = (255, 255, 255)
                     current_error = input_pixels[x, y][0] + self.error_table[x][y] - 255
 
-                # error propagation
                 self._propagate_error(x, y, current_error)
 
-        self.output_image.save(os.path.join(self.destination_path, self.output_image_name))
+        self.save()
 
     def _propagate_error(self, x, y, current_error):
-        self.error_table[x + 1][y] += + 7 / 16 * current_error
+        self.error_table[x + 1][y] += 7 / 16 * current_error
         self.error_table[x + 1][y + 1] += 3 / 16 * current_error
         self.error_table[x][y + 1] += 5 / 16 * current_error
         self.error_table[x - 1][y + 1] += 1 / 16 * current_error
@@ -75,63 +79,32 @@ class FloydSteinberg:
 
 class JarvisJudiceNinke(FloydSteinberg):
     """
-    Floyd staingerg extension
+    Floyd Steinberg extension
     https://en.wikipedia.org/wiki/Dither
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.error_table = [[0 for _ in range(self.height + 3)] for __ in range(self.width + 3)]
-        self.output_image_name = "output_fjarvis_judice_ninke.jpg"
-
-    def _propagate_error(self, x, y, current_error):
-        self.error_table[x + 1][y] += 7 / 48 * current_error
-        self.error_table[x + 2][y] += 5 / 48 * current_error
-
-        self.error_table[x][y + 1] += 7 / 48 * current_error
-        self.error_table[x + 1][y + 1] += 5 / 48 * current_error
-        self.error_table[x + 2][y + 1] += 3 / 48 * current_error
-        self.error_table[x - 1][y + 1] += 5 / 48 * current_error
-        self.error_table[x - 2][y + 1] += 3 / 48 * current_error
-
-        self.error_table[x][y + 2] += 5 / 48 * current_error
-        self.error_table[x + 1][y + 2] += 3 / 48 * current_error
-        self.error_table[x + 2][y + 2] += 1 / 48 * current_error
-        self.error_table[x - 1][y + 2] += 3 / 48 * current_error
-        self.error_table[x - 2][y + 2] += 1 / 48 * current_error
+        self.output_image_name = "output_jarvis_judice_ninke.jpg"
 
 
 class Stucki(FloydSteinberg):
     """
-        Floyd staingerg extension
-        https://en.wikipedia.org/wiki/Dither
-        """
+    Floyd Steinberg extension
+    https://en.wikipedia.org/wiki/Dither
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.error_table = [[0 for _ in range(self.height + 3)] for __ in range(self.width + 3)]
         self.output_image_name = "output_stucki.jpg"
 
-    def _propagate_error(self, x, y, current_error):
-        self.error_table[x + 1][y] += 8 / 42 * current_error
-        self.error_table[x + 2][y] += 4 / 42 * current_error
-
-        self.error_table[x][y + 1] += 8 / 42 * current_error
-        self.error_table[x + 1][y + 1] += 4 / 42 * current_error
-        self.error_table[x + 2][y + 1] += 2 / 42 * current_error
-        self.error_table[x - 1][y + 1] += 4 / 42 * current_error
-        self.error_table[x - 2][y + 1] += 2 / 42 * current_error
-
-        self.error_table[x][y + 2] += 4 / 42 * current_error
-        self.error_table[x + 1][y + 2] += 2 / 42 * current_error
-        self.error_table[x + 2][y + 2] += 1 / 42 * current_error
-        self.error_table[x - 1][y + 2] += 2 / 42 * current_error
-        self.error_table[x - 2][y + 2] += 1 / 42 * current_error
-
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Dithering algorithm')
+    parser = argparse.ArgumentParser(description="Dithering algorithm")
     parser.add_argument("--src", type=str, help="Source file path.")
-    parser.add_argument("--dest", type=str, help="Destination file path.", default='data/')
+    parser.add_argument("--dest", type=str, help="Destination file path.", default="data/")
     parser.add_argument("--method", type=str, help="Dithering method")
     parser.add_argument("--factor", type=int, help="Factor when goes black/white pixel")
     return parser.parse_args()
@@ -140,7 +113,7 @@ def parse_args():
 def main():
     name2alg = {
         "floydsteinberg": FloydSteinberg,
-        "jarbisjdiceninke": JarvisJudiceNinke,
+        "jarvisjudiceninke": JarvisJudiceNinke,
         "stucki": Stucki
     }
 
